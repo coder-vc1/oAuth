@@ -29,6 +29,16 @@ In order to get a Client ID and Client Secret, you need to create an OAuth app o
 
 **Redirect URL**: `http://localhost:8080/cloudEagle/login/oauth2/code/dropbox`
 
+## Token Management
+
+### JWT Token Structure
+- **Access Token**: Contains user info + Dropbox access token, valid for 24 hours
+- **Refresh Token**: Valid for 7 days, used to refresh expired access tokens
+
+### Token Refresh Endpoints
+- **JWT Refresh**: `POST /cloudEagle/auth/refresh`
+- **Dropbox Token Refresh**: `POST /cloudEagle/dropbox/refresh-dropbox-token`
+
 ## API Endpoints
 
 ### 1. To get the name of the team/organization
@@ -228,7 +238,9 @@ curl -X POST https://api.dropboxapi.com/2/team_log/get_events \
 
 - All Dropbox API endpoints require a valid OAuth2 access token
 - The access token is obtained during the OAuth2 authorization flow
-- The token is embedded in the JWT token for secure API access
+- Both access and refresh tokens are embedded in the JWT token for secure API access
+- JWT tokens expire in 24 hours (with Dropbox tokens) or 10 minutes (basic)
+- Refresh tokens expire in 7 days
 - All endpoints use POST method with JSON content type
 - Rate limiting applies to all API calls
 - Team APIs require a Dropbox Business account
@@ -248,5 +260,38 @@ Use the provided Java application endpoints:
 - `GET /cloudEagle/dropbox/account-info` - Get account information  
 - `GET /cloudEagle/dropbox/team-members` - Get team members
 - `GET /cloudEagle/dropbox/sign-in-events` - Get sign-in events
+- `POST /cloudEagle/dropbox/refresh-dropbox-token` - Refresh Dropbox access token
+- `POST /cloudEagle/auth/refresh` - Refresh JWT token
 
 All endpoints require the JWT token in the Authorization header: `Bearer <JWT_TOKEN>`
+
+## Frontend Integration
+
+### Token Storage
+```javascript
+// Store tokens after OAuth2 login
+localStorage.setItem('accessToken', response.jwt);
+localStorage.setItem('refreshToken', response.refreshToken);
+```
+
+### Automatic Token Refresh
+```javascript
+// Refresh JWT token when expired
+const refreshToken = async () => {
+  const response = await fetch('/cloudEagle/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken: localStorage.getItem('refreshToken') })
+  });
+  
+  if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem('accessToken', data.jwt);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    return data.jwt;
+  }
+  
+  // Redirect to login if refresh fails
+  window.location.href = '/cloudEagle/login';
+};
+```

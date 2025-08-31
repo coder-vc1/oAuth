@@ -1,12 +1,13 @@
 # Dropbox OAuth Integration Application
 
-This Spring Boot application demonstrates OAuth2 integration with Dropbox API, including authentication and data fetching capabilities.
+This Spring Boot application demonstrates OAuth2 integration with Dropbox API, including authentication, refresh token functionality, and data fetching capabilities.
 
 ## Features
 
 - **OAuth2 Authentication**: Secure login via Dropbox OAuth2
-- **JWT Token Management**: Secure token-based authentication
+- **JWT Token Management**: Secure token-based authentication with refresh tokens
 - **Dropbox API Integration**: Access to team, account, and user data
+- **Token Refresh**: Automatic token refresh for both JWT and Dropbox tokens
 - **RESTful Endpoints**: Clean API design for external consumption
 
 ## Prerequisites
@@ -71,6 +72,7 @@ The application will start on `http://localhost:8080`
 
 1. **OAuth2 Login**: `GET /cloudEagle/login/oauth2/code/dropbox`
 2. **Login Page**: `GET /cloudEagle/login`
+3. **Token Refresh**: `POST /cloudEagle/auth/refresh`
 
 ### Dropbox API Endpoints
 
@@ -80,6 +82,7 @@ All endpoints require JWT token in Authorization header: `Bearer <JWT_TOKEN>`
 - **Account Information**: `GET /cloudEagle/dropbox/account-info`
 - **Team Members**: `GET /cloudEagle/dropbox/team-members`
 - **Sign-in Events**: `GET /cloudEagle/dropbox/sign-in-events`
+- **Refresh Dropbox Token**: `POST /cloudEagle/dropbox/refresh-dropbox-token`
 
 ## Usage Examples
 
@@ -88,7 +91,7 @@ All endpoints require JWT token in Authorization header: `Bearer <JWT_TOKEN>`
 1. Navigate to `http://localhost:8080/cloudEagle/login`
 2. Click "Login with Dropbox"
 3. Complete OAuth2 authorization
-4. Receive JWT token in response
+4. Receive JWT token and refresh token in response
 
 ### 2. API Calls
 
@@ -108,6 +111,19 @@ curl -X GET http://localhost:8080/cloudEagle/dropbox/team-members \
 # Get sign-in events
 curl -X GET http://localhost:8080/cloudEagle/dropbox/sign-in-events \
   --header "Authorization: Bearer YOUR_JWT_TOKEN"
+
+# Refresh Dropbox token
+curl -X POST http://localhost:8080/cloudEagle/dropbox/refresh-dropbox-token \
+  --header "Authorization: Bearer YOUR_JWT_TOKEN"
+```
+
+### 3. Token Refresh
+
+```bash
+# Refresh JWT token
+curl -X POST http://localhost:8080/cloudEagle/auth/refresh \
+  --header "Content-Type: application/json" \
+  --data '{"refreshToken": "YOUR_REFRESH_TOKEN"}'
 ```
 
 ## Demo Program
@@ -172,3 +188,60 @@ For issues and questions:
 2. Review the API documentation
 3. Check Dropbox API status at [Dropbox Status Page](https://status.dropbox.com/)
 4. Open an issue in the repository
+
+## Token Management
+
+### JWT Token
+- **Access Token**: Valid for 24 hours (when Dropbox tokens are included) or 10 minutes (basic)
+- **Refresh Token**: Valid for 7 days
+- **Auto-refresh**: Use refresh token to get new access token
+
+### Dropbox Token
+- **Access Token**: Embedded in JWT, refreshed via `/refresh-dropbox-token` endpoint
+- **Refresh Token**: Embedded in JWT, used to refresh Dropbox access token
+
+### Frontend Token Handling
+
+```javascript
+// Store tokens after login
+const handleLoginSuccess = (response) => {
+  localStorage.setItem('accessToken', response.jwt);
+  localStorage.setItem('refreshToken', response.refreshToken);
+};
+
+// Refresh JWT token
+const refreshJWTToken = async () => {
+  const refreshToken = localStorage.getItem('refreshToken');
+  const response = await fetch('/cloudEagle/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken })
+  });
+  
+  if (response.ok) {
+    const data = await response.json();
+    localStorage.setItem('accessToken', data.jwt);
+    localStorage.setItem('refreshToken', data.refreshToken);
+    return data.jwt;
+  }
+  
+  // Redirect to login if refresh fails
+  window.location.href = '/cloudEagle/login';
+};
+
+// Refresh Dropbox token
+const refreshDropboxToken = async () => {
+  const accessToken = localStorage.getItem('accessToken');
+  const response = await fetch('/cloudEagle/dropbox/refresh-dropbox-token', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  });
+  
+  if (response.ok) {
+    // Get new JWT with refreshed Dropbox token
+    return await refreshJWTToken();
+  }
+  
+  return null;
+};
+```

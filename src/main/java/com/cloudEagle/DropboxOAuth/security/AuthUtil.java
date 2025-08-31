@@ -45,6 +45,29 @@ public class AuthUtil {
                 .compact();
     }
 
+    public String generateAccessTokenWithDropboxTokens(User user, String dropboxAccessToken, String dropboxRefreshToken) {
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .claim("dropboxAccessToken", dropboxAccessToken)
+                .claim("dropboxRefreshToken", dropboxRefreshToken)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000*60*60*24)) // 24 hours
+                .signWith(getSecretKey())
+                .compact();
+    }
+
+    public String generateRefreshToken(User user) {
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .claim("tokenType", "refresh")
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000*60*60*24*7)) // 7 days
+                .signWith(getSecretKey())
+                .compact();
+    }
+
     public String getUsernameFromToken(String token) {
         Claims claims =  Jwts.parser()
                 .verifyWith(getSecretKey())
@@ -61,6 +84,28 @@ public class AuthUtil {
                 .parseSignedClaims(token)
                 .getPayload();
         return claims.get("dropboxAccessToken", String.class);
+    }
+
+    public String getDropboxRefreshTokenFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("dropboxRefreshToken", String.class);
+    }
+
+    public boolean isRefreshToken(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(getSecretKey())
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
+            return "refresh".equals(claims.get("tokenType", String.class));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public AuthProviderType getProviderTypeFromRegistrationId(String registrationId) {

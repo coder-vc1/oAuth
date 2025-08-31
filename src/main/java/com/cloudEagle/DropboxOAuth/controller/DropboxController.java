@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.PostMapping;
 
 
 @RestController
@@ -68,6 +69,34 @@ public class DropboxController {
     return response;
   }
 
+  @GetMapping("/account-info")
+  public ResponseEntity<String> getAccountInfo(HttpServletRequest request) {
+    String accessToken = extractDropboxAccessToken(request);
+    logger.info("/account-info called. accessToken: {}", accessToken);
+    
+    if (accessToken == null) {
+      return ResponseEntity.badRequest().body("Dropbox access token not found in JWT token");
+    }
+    
+    ResponseEntity<String> response = dropboxApiService.getAccountInfo(accessToken);
+    logger.info("Dropbox API response: {}", response.getBody());
+    return response;
+  }
+
+  @PostMapping("/refresh-dropbox-token")
+  public ResponseEntity<String> refreshDropboxToken(HttpServletRequest request) {
+    String refreshToken = extractDropboxRefreshToken(request);
+    logger.info("/refresh-dropbox-token called. refreshToken: {}", refreshToken);
+    
+    if (refreshToken == null) {
+      return ResponseEntity.badRequest().body("Dropbox refresh token not found in JWT token");
+    }
+    
+    ResponseEntity<String> response = dropboxApiService.refreshAccessToken(refreshToken);
+    logger.info("Dropbox token refresh response: {}", response.getBody());
+    return response;
+  }
+
   private String extractDropboxAccessToken(HttpServletRequest request) {
     String authHeader = request.getHeader("Authorization");
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -80,6 +109,22 @@ public class DropboxController {
       return authUtil.getDropboxAccessTokenFromToken(jwtToken);
     } catch (Exception e) {
       logger.error("Error extracting Dropbox access token from JWT: {}", e.getMessage());
+      return null;
+    }
+  }
+
+  private String extractDropboxRefreshToken(HttpServletRequest request) {
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      logger.error("Authorization header not found or invalid format");
+      return null;
+    }
+
+    String jwtToken = authHeader.substring(7); // Remove "Bearer " prefix
+    try {
+      return authUtil.getDropboxRefreshTokenFromToken(jwtToken);
+    } catch (Exception e) {
+      logger.error("Error extracting Dropbox refresh token from JWT: {}", e.getMessage());
       return null;
     }
   }

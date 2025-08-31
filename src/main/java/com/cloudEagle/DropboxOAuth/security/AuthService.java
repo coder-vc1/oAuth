@@ -39,8 +39,9 @@ public class AuthService {
     User user = (User) authentication.getPrincipal();
 
     String token = authUtil.generateAccessToken(user);
+    String refreshToken = authUtil.generateRefreshToken(user);
 
-    return new LoginResponseDto(token, user.getId());
+    return new LoginResponseDto(token, refreshToken, user.getId());
   }
 
   public User signUpInternal(SignUpRequestDto signupRequestDto, AuthProviderType authProviderType,
@@ -75,7 +76,7 @@ public class AuthService {
 
   @Transactional
   public ResponseEntity<LoginResponseDto> handleOAuth2LoginRequest(OAuth2User oAuth2User,
-      String registrationId, String dropboxAccessToken) {
+      String registrationId, String dropboxAccessToken, String dropboxRefreshToken) {
     AuthProviderType providerType = authUtil.getProviderTypeFromRegistrationId(registrationId);
     String providerId = authUtil.determineProviderIdFromOAuth2User(oAuth2User, registrationId);
 
@@ -103,16 +104,47 @@ public class AuthService {
           "This email is already registered with provider " + emailUser.getProviderType());
     }
 
-    // Generate JWT token with Dropbox access token if available
-    String token;
+    // Generate JWT tokens with Dropbox tokens if available
+    String accessToken;
+    String refreshToken = authUtil.generateRefreshToken(user);
+    
     if (dropboxAccessToken != null && !dropboxAccessToken.isBlank()) {
-      token = authUtil.generateAccessTokenWithDropboxToken(user, dropboxAccessToken);
+      if (dropboxRefreshToken != null && !dropboxRefreshToken.isBlank()) {
+        accessToken = authUtil.generateAccessTokenWithDropboxTokens(user, dropboxAccessToken, dropboxRefreshToken);
+      } else {
+        accessToken = authUtil.generateAccessTokenWithDropboxToken(user, dropboxAccessToken);
+      }
     } else {
-      token = authUtil.generateAccessToken(user);
+      accessToken = authUtil.generateAccessToken(user);
     }
 
-    LoginResponseDto loginResponseDto = new LoginResponseDto(token, user.getId());
+    LoginResponseDto loginResponseDto = new LoginResponseDto(accessToken, refreshToken, user.getId());
     return ResponseEntity.ok(loginResponseDto);
+  }
+
+  public LoginResponseDto refreshToken(String refreshToken) {
+    try {
+      // Validate the refresh token
+      if (!authUtil.isRefreshToken(refreshToken)) {
+        throw new BadCredentialsException("Invalid refresh token");
+      }
+
+      // Extract user information from refresh token
+      String username = authUtil.getUsernameFromToken(refreshToken);
+      User user = userRepository.findByUsername(username).orElse(null);
+      
+      if (user == null) {
+        throw new BadCredentialsException("User not found");
+      }
+
+      // Generate new access and refresh tokens
+      String newAccessToken = authUtil.generateAccessToken(user);
+      String newRefreshToken = authUtil.generateRefreshToken(user);
+
+      return new LoginResponseDto(newAccessToken, newRefreshToken, user.getId());
+    } catch (Exception e) {
+      throw new BadCredentialsException("Invalid refresh token: " + e.getMessage());
+    }
   }
 }
 
