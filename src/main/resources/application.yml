@@ -1,0 +1,33 @@
+spring:
+  security.oauth2.client:
+    provider:
+      dropbox:
+        authorization-uri: https://www.dropbox.com/oauth2/authorize
+        token-uri: https://api.dropboxapi.com/oauth2/token
+        user-info-uri: https://api.dropboxapi.com/2/users/get_current_account
+        user-name-attribute: account_id
+
+    registration:
+      dropbox:
+        client-id: ${DROPBOX_APP_KEY:d7xqp4l8fnv9cdi}
+        client-secret: ${DROPBOX_APP_SECRET:o88kjfkqx7rxtns}
+        redirect-uri: http://localhost:8080/cloudEagle/login/oauth2/code/dropbox
+        authorization-grant-type: authorization_code
+        scope:
+          - account_info.read
+          - files.metadata.read
+          - files.content.read
+          - sharing.read
+          - team_info.read
+          - team_data.member
+          - team_data.team_space
+          - team_data.content.read
+          - members.read
+          - groups.read
+          - events.read
+        client-name: Dropbox
+        provider: dropbox
+        client-authentication-method: client_secret_post
+
+
+#  http://localhost:8080/api/v1/login/oauth2/code/dropbox
