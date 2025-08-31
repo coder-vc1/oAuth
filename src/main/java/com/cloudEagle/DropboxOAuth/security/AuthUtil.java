@@ -34,6 +34,17 @@ public class AuthUtil {
                 .compact();
     }
 
+    public String generateAccessTokenWithDropboxToken(User user, String dropboxAccessToken) {
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .claim("dropboxAccessToken", dropboxAccessToken)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000*60*10))
+                .signWith(getSecretKey())
+                .compact();
+    }
+
     public String getUsernameFromToken(String token) {
         Claims claims =  Jwts.parser()
                 .verifyWith(getSecretKey())
@@ -41,6 +52,15 @@ public class AuthUtil {
                 .parseSignedClaims(token)
                 .getPayload();
         return claims.getSubject();
+    }
+
+    public String getDropboxAccessTokenFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        return claims.get("dropboxAccessToken", String.class);
     }
 
     public AuthProviderType getProviderTypeFromRegistrationId(String registrationId) {

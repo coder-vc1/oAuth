@@ -40,12 +40,14 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             token.getName()
         );
         String dropboxAccessToken = client != null ? client.getAccessToken().getTokenValue() : null;
+        
+        // Store the dropbox access token in the request for the auth service to use
         if (dropboxAccessToken != null) {
-            request.getSession().setAttribute("dropboxAccessToken", dropboxAccessToken);
+            request.setAttribute("dropboxAccessToken", dropboxAccessToken);
         }
 
         ResponseEntity<LoginResponseDto> loginResponse = authService.handleOAuth2LoginRequest(oAuth2User,
-                registrationId);
+                registrationId, dropboxAccessToken);
 
         response.setStatus(loginResponse.getStatusCode().value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);

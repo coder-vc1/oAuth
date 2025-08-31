@@ -75,7 +75,7 @@ public class AuthService {
 
   @Transactional
   public ResponseEntity<LoginResponseDto> handleOAuth2LoginRequest(OAuth2User oAuth2User,
-      String registrationId) {
+      String registrationId, String dropboxAccessToken) {
     AuthProviderType providerType = authUtil.getProviderTypeFromRegistrationId(registrationId);
     String providerId = authUtil.determineProviderIdFromOAuth2User(oAuth2User, registrationId);
 
@@ -103,8 +103,15 @@ public class AuthService {
           "This email is already registered with provider " + emailUser.getProviderType());
     }
 
-    LoginResponseDto loginResponseDto = new LoginResponseDto(authUtil.generateAccessToken(user),
-        user.getId());
+    // Generate JWT token with Dropbox access token if available
+    String token;
+    if (dropboxAccessToken != null && !dropboxAccessToken.isBlank()) {
+      token = authUtil.generateAccessTokenWithDropboxToken(user, dropboxAccessToken);
+    } else {
+      token = authUtil.generateAccessToken(user);
+    }
+
+    LoginResponseDto loginResponseDto = new LoginResponseDto(token, user.getId());
     return ResponseEntity.ok(loginResponseDto);
   }
 }
