@@ -2,6 +2,7 @@ package com.cloudEagle.DropboxOAuth.controller;
 
 import com.cloudEagle.DropboxOAuth.dto.LoginRequestDto;
 import com.cloudEagle.DropboxOAuth.dto.LoginResponseDto;
+import com.cloudEagle.DropboxOAuth.dto.RefreshTokenRequestDto;
 import com.cloudEagle.DropboxOAuth.security.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -22,5 +23,8 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(loginRequestDto));
     }
 
-
+    @PostMapping("/refresh")
+    public ResponseEntity<LoginResponseDto> refreshToken(@RequestBody RefreshTokenRequestDto refreshTokenRequestDto) {
+        return ResponseEntity.ok(authService.refreshToken(refreshTokenRequestDto.getRefreshToken()));
+    }
 }

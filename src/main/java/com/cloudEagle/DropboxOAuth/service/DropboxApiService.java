@@ -12,7 +12,7 @@ public class DropboxApiService {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<String> entity = new HttpEntity<>(null, headers);
+      HttpEntity<String> entity = new HttpEntity<>("null", headers);
 
       return restTemplate.exchange(
             "https://api.dropboxapi.com/2/team/get_info",
@@ -26,7 +26,7 @@ public class DropboxApiService {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
-      HttpEntity<String> entity = new HttpEntity<>(null, headers);
+      HttpEntity<String> entity = new HttpEntity<>("null", headers);
 
       return restTemplate.exchange(
             "https://api.dropboxapi.com/2/team/members/list",
@@ -40,10 +40,39 @@ public class DropboxApiService {
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
-        String body = "{\"limit\":10,\"event_types\":[\"login\"]}";
+        String body = "{\"limit\":10}";
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         return restTemplate.exchange(
             "https://api.dropboxapi.com/2/team_log/get_events",
+            HttpMethod.POST,
+            entity,
+            String.class
+        );
+    }
+
+    public ResponseEntity<String> getAccountInfo(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(null, headers);
+        
+        return restTemplate.exchange(
+            "https://api.dropboxapi.com/2/users/get_current_account",
+            HttpMethod.POST,
+            entity,
+            String.class
+        );
+    }
+
+    public ResponseEntity<String> refreshAccessToken(String refreshToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+        
+        String body = String.format("grant_type=refresh_token&refresh_token=%s", refreshToken);
+        HttpEntity<String> entity = new HttpEntity<>(body, headers);
+        
+        return restTemplate.exchange(
+            "https://api.dropboxapi.com/oauth2/token",
             HttpMethod.POST,
             entity,
             String.class
