@@ -243,10 +243,6 @@ docker run -p 8080:8080 dropbox-oauth
 4. Add tests if applicable
 5. Submit a pull request
 
-## 📄 **License**
-
-This project is part of the CloudEagle Assessment and is provided as-is for evaluation purposes.
-
 ## 🔗 **Links**
 
 - **Dropbox API Documentation:** https://www.dropbox.com/developers/documentation
@@ -268,4 +264,3 @@ This project is part of the CloudEagle Assessment and is provided as-is for eval
 
 ---
 
-**Built with ❤️ for CloudEagle Assessment**
