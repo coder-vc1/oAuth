@@ -2,6 +2,7 @@ package com.cloudEagle.DropboxOAuth.controller;
 
 import com.cloudEagle.DropboxOAuth.service.DropboxApiService;
 import com.cloudEagle.DropboxOAuth.security.AuthUtil;
+import com.cloudEagle.DropboxOAuth.dto.*;
 import lombok.RequiredArgsConstructor;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PostMapping;
 
 
 @RestController
@@ -28,62 +28,106 @@ public class DropboxController {
   private AuthUtil authUtil;
 
   @GetMapping("/team-info")
-  public ResponseEntity<String> getTeamInfo(HttpServletRequest request) {
+  public ResponseEntity<TeamInfoResponseDto> getTeamInfo(HttpServletRequest request) {
     String accessToken = extractDropboxAccessToken(request);
     logger.info("/team-info called. accessToken: {}", accessToken);
     
     if (accessToken == null) {
-      return ResponseEntity.badRequest().body("Dropbox access token not found in JWT token");
+      return ResponseEntity.badRequest().body(new TeamInfoResponseDto("Error: Dropbox access token not found", ""));
     }
     
-    ResponseEntity<String> response = dropboxApiService.getTeamInfo(accessToken);
-    logger.info("Dropbox API response: {}", response.getBody());
-    return response;
-  }
-
-  @GetMapping("/team-members")
-  public ResponseEntity<String> getTeamMembers(HttpServletRequest request) {
-    String accessToken = extractDropboxAccessToken(request);
-    logger.info("/team-members called. accessToken: {}", accessToken);
-    
-    if (accessToken == null) {
-      return ResponseEntity.badRequest().body("Dropbox access token not found in JWT token");
-    }
-    
-    ResponseEntity<String> response = dropboxApiService.getTeamMembers(accessToken);
-    logger.info("Dropbox API response: {}", response.getBody());
-    return response;
-  }
-
-  @GetMapping("/sign-in-events")
-  public ResponseEntity<String> getSignInEvents(HttpServletRequest request) {
-    String accessToken = extractDropboxAccessToken(request);
-    logger.info("/sign-in-events called. accessToken: {}", accessToken);
-    
-    if (accessToken == null) {
-      return ResponseEntity.badRequest().body("Dropbox access token not found in JWT token");
-    }
-    
-    ResponseEntity<String> response = dropboxApiService.getSignInEvents(accessToken);
+    ResponseEntity<TeamInfoResponseDto> response = dropboxApiService.getTeamInfo(accessToken);
     logger.info("Dropbox API response: {}", response.getBody());
     return response;
   }
 
   @GetMapping("/account-info")
-  public ResponseEntity<String> getAccountInfo(HttpServletRequest request) {
+  public ResponseEntity<AccountInfoResponseDto> getAccountInfo(HttpServletRequest request) {
     String accessToken = extractDropboxAccessToken(request);
     logger.info("/account-info called. accessToken: {}", accessToken);
     
     if (accessToken == null) {
-      return ResponseEntity.badRequest().body("Dropbox access token not found in JWT token");
+      return ResponseEntity.badRequest().body(new AccountInfoResponseDto());
     }
     
-    ResponseEntity<String> response = dropboxApiService.getAccountInfo(accessToken);
+    ResponseEntity<AccountInfoResponseDto> response = dropboxApiService.getAccountInfo(accessToken);
     logger.info("Dropbox API response: {}", response.getBody());
     return response;
   }
 
-  @PostMapping("/refresh-dropbox-token")
+  @GetMapping("/account-plan-license")
+  public ResponseEntity<AccountPlanLicenseDto> getAccountPlanLicense(HttpServletRequest request) {
+    String accessToken = extractDropboxAccessToken(request);
+    logger.info("/account-plan-license called. accessToken: {}", accessToken);
+    
+    if (accessToken == null) {
+      return ResponseEntity.badRequest().body(new AccountPlanLicenseDto());
+    }
+    
+    ResponseEntity<AccountPlanLicenseDto> response = dropboxApiService.getAccountPlanLicenseInfo(accessToken);
+    logger.info("Dropbox API response: {}", response.getBody());
+    return response;
+  }
+
+  @GetMapping("/plan-license")
+  public ResponseEntity<PlanLicenseDto> getPlanLicense(HttpServletRequest request) {
+    String accessToken = extractDropboxAccessToken(request);
+    logger.info("/plan-license called. accessToken: {}", accessToken);
+    
+    if (accessToken == null) {
+      return ResponseEntity.badRequest().body(new PlanLicenseDto());
+    }
+    
+    ResponseEntity<PlanLicenseDto> response = dropboxApiService.getPlanLicenseInfo(accessToken);
+    logger.info("Dropbox API response: {}", response.getBody());
+    return response;
+  }
+
+  @GetMapping("/team-members")
+  public ResponseEntity<TeamMembersListResponseDto> getTeamMembers(
+      HttpServletRequest request,
+      Integer limit,
+      String cursor) {
+    String accessToken = extractDropboxAccessToken(request);
+    logger.info("/team-members called. accessToken: {}, limit: {}, cursor: {}", accessToken, limit, cursor);
+    
+    if (accessToken == null) {
+      return ResponseEntity.badRequest().body(new TeamMembersListResponseDto());
+    }
+    
+    // Set default limit if not provided
+    if (limit == null || limit <= 0) {
+      limit = 100;
+    }
+    
+    ResponseEntity<TeamMembersListResponseDto> response = dropboxApiService.getTeamMembers(accessToken, limit, cursor);
+    logger.info("Dropbox API response: {}", response.getBody());
+    return response;
+  }
+
+  @GetMapping("/sign-in-events")
+  public ResponseEntity<SignInEventsListResponseDto> getSignInEvents(
+      HttpServletRequest request,
+      Integer limit,
+      String cursor) {
+    String accessToken = extractDropboxAccessToken(request);
+    logger.info("/sign-in-events called. accessToken: {}, limit: {}, cursor: {}", accessToken, limit, cursor);
+    
+    if (accessToken == null) {
+      return ResponseEntity.badRequest().body(new SignInEventsListResponseDto());
+    }
+    
+    // Set default limit if not provided
+    if (limit == null || limit <= 0) {
+      limit = 10;
+    }
+    
+    ResponseEntity<SignInEventsListResponseDto> response = dropboxApiService.getSignInEvents(accessToken, limit, cursor);
+    logger.info("Dropbox API response: {}", response.getBody());
+    return response;
+  }
+
+  @GetMapping("/refresh-dropbox-token")
   public ResponseEntity<String> refreshDropboxToken(HttpServletRequest request) {
     String refreshToken = extractDropboxRefreshToken(request);
     logger.info("/refresh-dropbox-token called. refreshToken: {}", refreshToken);

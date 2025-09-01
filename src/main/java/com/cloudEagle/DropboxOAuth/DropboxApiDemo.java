@@ -114,7 +114,7 @@ public class DropboxApiDemo {
         headers.setBearerAuth(accessToken);
         headers.setContentType(MediaType.APPLICATION_JSON);
         
-        String body = "{\"limit\":10,\"event_types\":[\"login\"]}";
+        String body = "{\"limit\":10,\"event_type\":[\"login\"]}";
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         
         ResponseEntity<String> response = restTemplate.exchange(

@@ -106,16 +106,23 @@ public class AuthService {
 
     // Generate JWT tokens with Dropbox tokens if available
     String accessToken;
-    String refreshToken = authUtil.generateRefreshToken(user);
+    String refreshToken;
     
     if (dropboxAccessToken != null && !dropboxAccessToken.isBlank()) {
+      // Always include Dropbox access token in both tokens if available
       if (dropboxRefreshToken != null && !dropboxRefreshToken.isBlank()) {
+        // Both tokens available
         accessToken = authUtil.generateAccessTokenWithDropboxTokens(user, dropboxAccessToken, dropboxRefreshToken);
+        refreshToken = authUtil.generateRefreshTokenWithDropboxTokens(user, dropboxAccessToken, dropboxRefreshToken);
       } else {
+        // Only access token available
         accessToken = authUtil.generateAccessTokenWithDropboxToken(user, dropboxAccessToken);
+        refreshToken = authUtil.generateRefreshTokenWithDropboxToken(user, dropboxAccessToken);
       }
     } else {
+      // No Dropbox tokens available
       accessToken = authUtil.generateAccessToken(user);
+      refreshToken = authUtil.generateRefreshToken(user);
     }
 
     LoginResponseDto loginResponseDto = new LoginResponseDto(accessToken, refreshToken, user.getId());
@@ -137,9 +144,30 @@ public class AuthService {
         throw new BadCredentialsException("User not found");
       }
 
+      // Extract Dropbox tokens from the old refresh token if they exist
+      String dropboxAccessToken = authUtil.getDropboxAccessTokenFromToken(refreshToken);
+      String dropboxRefreshToken = authUtil.getDropboxRefreshTokenFromToken(refreshToken);
+
       // Generate new access and refresh tokens
-      String newAccessToken = authUtil.generateAccessToken(user);
-      String newRefreshToken = authUtil.generateRefreshToken(user);
+      String newAccessToken;
+      String newRefreshToken;
+      
+      if (dropboxAccessToken != null && !dropboxAccessToken.isBlank()) {
+        // Dropbox access token is available
+        if (dropboxRefreshToken != null && !dropboxRefreshToken.isBlank()) {
+          // Both tokens available
+          newAccessToken = authUtil.generateAccessTokenWithDropboxTokens(user, dropboxAccessToken, dropboxRefreshToken);
+          newRefreshToken = authUtil.generateRefreshTokenWithDropboxTokens(user, dropboxAccessToken, dropboxRefreshToken);
+        } else {
+          // Only access token available
+          newAccessToken = authUtil.generateAccessTokenWithDropboxToken(user, dropboxAccessToken);
+          newRefreshToken = authUtil.generateRefreshTokenWithDropboxToken(user, dropboxAccessToken);
+        }
+      } else {
+        // No Dropbox tokens available
+        newAccessToken = authUtil.generateAccessToken(user);
+        newRefreshToken = authUtil.generateRefreshToken(user);
+      }
 
       return new LoginResponseDto(newAccessToken, newRefreshToken, user.getId());
     } catch (Exception e) {
