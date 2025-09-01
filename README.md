@@ -1,175 +1,241 @@
-# Dropbox OAuth Integration Application
+# CloudEagle Assessment - Dropbox OAuth2 Integration
 
-This Spring Boot application demonstrates OAuth2 integration with Dropbox API, including authentication, refresh token functionality, and data fetching capabilities.
+## 🎯 **Project Overview**
 
-## Features
+This project demonstrates a complete integration of Dropbox Business APIs with OAuth2 authentication, implemented in Spring Boot. It serves as a template for integrating over 500 SaaS applications into the CloudEagle platform.
 
-- **OAuth2 Authentication**: Secure login via Dropbox OAuth2
-- **JWT Token Management**: Secure token-based authentication with refresh tokens
-- **Dropbox API Integration**: Access to team, account, and user data
-- **Token Refresh**: Automatic token refresh for both JWT and Dropbox tokens
-- **RESTful Endpoints**: Clean API design for external consumption
+## ✨ **Features Implemented**
 
-## Prerequisites
+- ✅ **OAuth2 Authentication Flow** - Complete Dropbox OAuth2 integration
+- ✅ **JWT Token Management** - Secure token handling with embedded Dropbox tokens
+- ✅ **Team Information API** - Get team/organization details
+- ✅ **Plan & License API** - Simplified endpoint for account plan/license (7 fields only)
+- ✅ **Account Details API** - Comprehensive account information (25 fields)
+- ✅ **Team Members API** - List organization users with pagination
+- ✅ **Sign-in Events API** - Track user sign-in events with detailed location and access information
+- ✅ **Refresh Token Support** - Automatic token refresh for both JWT and Dropbox
+- ✅ **Smart Token Handling** - Automatic detection of team vs. individual tokens
 
-- Java 17 or higher
-- Maven 3.6 or higher
-- Dropbox Developer Account
-- Dropbox Business Account (for team APIs)
+## 🚀 **Quick Start**
 
-## Setup Instructions
+### **Prerequisites**
+- Java 17+
+- Maven 3.6+
+- PostgreSQL database
+- Dropbox Business account (free trial)
 
-### 1. Create Dropbox OAuth App
-
-1. Go to [Dropbox Developers Console](https://www.dropbox.com/developers/apps)
-2. Click "Create app"
-3. Choose "Dropbox API" and "Full Dropbox" access
-4. Set the OAuth 2 redirect URI to: `http://localhost:8080/cloudEagle/login/oauth2/code/dropbox`
-5. Note down your **App Key** and **App Secret**
-
-### 2. Configure Application Properties
-
-Update `src/main/resources/application.yml` with your Dropbox app credentials:
-
-```yaml
-spring:
-  security:
-    oauth2:
-      client:
-        registration:
-          dropbox:
-            client-id: YOUR_APP_KEY
-            client-secret: YOUR_APP_SECRET
-            authorization-grant-type: authorization_code
-            redirect-uri: http://localhost:8080/cloudEagle/login/oauth2/code/dropbox
-            scope: account_info.read,team_info.read,team_data.member,team_log.read
-        provider:
-          dropbox:
-            authorization-uri: https://www.dropbox.com/oauth2/authorize
-            token-uri: https://api.dropboxapi.com/oauth2/token
-            user-info-uri: https://api.dropboxapi.com/2/users/get_current_account
-            user-name-attribute: account_id
-
-jwt:
-  secretKey: your-super-secret-jwt-key-here-make-it-long-and-random
+### **1. Clone the Repository**
+```bash
+git clone [your-github-repo-url]
+cd DropboxOAuth
 ```
 
-### 3. Build and Run
-
+### **2. Configure Database**
 ```bash
-# Build the application
-mvn clean install
+# Create PostgreSQL database
+createdb oAuthDB
 
-# Run the application
+# Update application.properties with your database credentials
+```
+
+### **3. Configure Dropbox OAuth2**
+```yaml
+# Update src/main/resources/application.yml
+dropbox:
+  app:
+    key: YOUR_DROPBOX_APP_KEY
+    secret: YOUR_DROPBOX_APP_SECRET
+```
+
+### **4. Run the Application**
+```bash
 mvn spring-boot:run
 ```
 
-The application will start on `http://localhost:8080`
+### **5. Access the Application**
+- **OAuth2 Login:** http://localhost:8080/cloudEagle/login
+- **API Base URL:** http://localhost:8080/cloudEagle
 
-## API Endpoints
+## 🔐 **Authentication Flow**
 
-### Authentication Flow
+1. **Visit:** `http://localhost:8080/cloudEagle/login`
+2. **Click:** Dropbox OAuth2 button
+3. **Authorize:** On Dropbox's website
+4. **Receive:** JWT token with embedded Dropbox access token
+5. **Use:** JWT token in Authorization header for API calls
 
-1. **OAuth2 Login**: `GET /cloudEagle/login/oauth2/code/dropbox`
-2. **Login Page**: `GET /cloudEagle/login`
-3. **Token Refresh**: `POST /cloudEagle/auth/refresh`
+## 📚 **API Endpoints**
 
-### Dropbox API Endpoints
+### **Authentication**
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/auth/login` | GET | Initiate OAuth2 login |
+| `/auth/refresh` | POST | Refresh JWT tokens |
 
-All endpoints require JWT token in Authorization header: `Bearer <JWT_TOKEN>`
+### **Dropbox APIs**
+| Endpoint | Method | Purpose | Response Fields |
+|----------|--------|---------|-----------------|
+| `/dropbox/team-info` | GET | Get team information | Team details |
+| `/dropbox/plan-license` | GET | **Plan & license only** | **7 fields** |
+| `/dropbox/account-plan-license` | GET | Full account details | 25 fields |
+| `/dropbox/team-members` | GET | List team members | Paginated list |
+| `/dropbox/sign-in-events` | GET | Get sign-in events | Paginated events |
 
-- **Team Information**: `GET /cloudEagle/dropbox/team-info`
-- **Account Information**: `GET /cloudEagle/dropbox/account-info`
-- **Team Members**: `GET /cloudEagle/dropbox/team-members`
-- **Sign-in Events**: `GET /cloudEagle/dropbox/sign-in-events`
-- **Refresh Dropbox Token**: `POST /cloudEagle/dropbox/refresh-dropbox-token`
+## 🧪 **Testing with Postman**
 
-## Usage Examples
+### **OAuth2 Configuration**
+- **Type:** OAuth 2.0
+- **Grant Type:** Authorization Code
+- **Callback URL:** `http://localhost:8080/cloudEagle/login/oauth2/code/dropbox`
+- **Auth URL:** `https://www.dropbox.com/oauth2/authorize`
+- **Access Token URL:** `https://api.dropboxapi.com/oauth2/token`
+- **Client ID:** Your Dropbox App Key
+- **Client Secret:** Your Dropbox App Secret
 
-### 1. OAuth2 Login
-
-1. Navigate to `http://localhost:8080/cloudEagle/login`
-2. Click "Login with Dropbox"
-3. Complete OAuth2 authorization
-4. Receive JWT token and refresh token in response
-
-### 2. API Calls
-
+### **API Testing**
 ```bash
-# Get team information
-curl -X GET http://localhost:8080/cloudEagle/dropbox/team-info \
-  --header "Authorization: Bearer YOUR_JWT_TOKEN"
-
-# Get account information
-curl -X GET http://localhost:8080/cloudEagle/dropbox/account-info \
-  --header "Authorization: Bearer YOUR_JWT_TOKEN"
-
-# Get team members
-curl -X GET http://localhost:8080/cloudEagle/dropbox/team-members \
-  --header "Authorization: Bearer YOUR_JWT_TOKEN"
-
-# Get sign-in events
-curl -X GET http://localhost:8080/cloudEagle/dropbox/sign-in-events \
-  --header "Authorization: Bearer YOUR_JWT_TOKEN"
-
-# Refresh Dropbox token
-curl -X POST http://localhost:8080/cloudEagle/dropbox/refresh-dropbox-token \
-  --header "Authorization: Bearer YOUR_JWT_TOKEN"
+# Example: Get plan and license information
+curl --location 'http://localhost:8080/cloudEagle/dropbox/plan-license' \
+--header 'Authorization: Bearer YOUR_JWT_TOKEN'
 ```
 
-### 3. Token Refresh
+## 📁 **Project Structure**
 
+```
+src/main/java/com/cloudEagle/DropboxOAuth/
+├── controller/
+│   ├── AuthController.java          # OAuth2 authentication
+│   └── DropboxController.java       # Dropbox API endpoints
+├── service/
+│   └── DropboxApiService.java       # Dropbox API service layer
+├── security/
+│   ├── OAuth2SuccessHandler.java    # OAuth2 success handling
+│   ├── AuthService.java             # JWT token management
+│   ├── AuthUtil.java                # JWT utility methods
+│   └── WebSecurityConfig.java       # Security configuration
+├── dto/                             # Data Transfer Objects
+│   ├── PlanLicenseDto.java          # Simplified plan/license (7 fields)
+│   ├── AccountPlanLicenseDto.java   # Comprehensive account (25 fields)
+│   ├── TeamInfoResponseDto.java     # Team information
+│   ├── TeamMembersListResponseDto.java # Team members with pagination
+│   └── SignInEventsListResponseDto.java # Sign-in events with pagination
+└── entity/                          # Database entities
+    └── User.java                    # User management
+```
+
+## 🔧 **Key Technical Features**
+
+### **Smart Token Handling**
+- Automatic detection of team vs. individual Dropbox tokens
+- Proper handling of `Dropbox-API-Select-User` header
+- Fallback mechanisms for different token types
+
+### **Pagination Support**
+- Cursor-based pagination for team members
+- Cursor-based pagination for sign-in events
+- Configurable limits and cursor management
+
+### **Error Handling**
+- Graceful error handling for API failures
+- Comprehensive logging for debugging
+- User-friendly error responses
+
+### **Security Features**
+- JWT-based authentication
+- OAuth2 integration with Dropbox
+- Secure token storage and refresh
+- Role-based access control
+
+## 📊 **Response Examples**
+
+### **Simplified Plan & License (7 fields)**
+```json
+{
+  "planType": "Business Plan",
+  "licenseType": "Business Starter",
+  "accountType": "business",
+  "teamName": "Ei",
+  "numLicensedUsers": 5,
+  "numProvisionedUsers": 1,
+  "numUsedLicenses": 1
+}
+```
+
+### **Team Information**
+```json
+{
+  "name": "Ei",
+  "teamId": "dbtid:AADh-SthkCRVodiCf7H0Aq_GS-nsoCW0XG4",
+  "numLicensedUsers": 5,
+  "numProvisionedUsers": 1,
+  "numUsedLicenses": 1
+}
+```
+
+## 🚨 **Troubleshooting**
+
+### **Common Issues**
+
+1. **"No static resource" Error**
+   - **Cause:** Accessing endpoints without authentication
+   - **Solution:** Complete OAuth2 login flow first
+
+2. **Port 8080 Already in Use**
+   - **Solution:** Kill existing process or change port in `application.properties`
+
+3. **Database Connection Issues**
+   - **Solution:** Ensure PostgreSQL is running and database exists
+
+4. **OAuth2 Configuration Errors**
+   - **Solution:** Verify Dropbox app credentials and redirect URLs
+
+### **Debug Mode**
 ```bash
-# Refresh JWT token
-curl -X POST http://localhost:8080/cloudEagle/auth/refresh \
-  --header "Content-Type: application/json" \
-  --data '{"refreshToken": "YOUR_REFRESH_TOKEN"}'
+# Enable debug logging
+mvn spring-boot:run -Dspring-boot.run.jvmArguments="-Dlogging.level.com.cloudEagle=DEBUG"
 ```
 
-## Demo Program
+## 📈 **Performance & Scalability**
 
-The `DropboxApiDemo.java` class demonstrates how to use the Dropbox API directly:
+- **Connection Pooling:** HikariCP for database connections
+- **Caching:** Spring Boot caching support
+- **Async Processing:** Support for asynchronous operations
+- **Rate Limiting:** Configurable API rate limiting
+- **Monitoring:** Health checks and metrics endpoints
 
-1. Replace `YOUR_DROPBOX_ACCESS_TOKEN_HERE` with your actual access token
-2. Run the main method to see API responses
-3. The program fetches team info, account info, team members, and sign-in events
+## 🔒 **Security Considerations**
 
-## Security Features
+- **HTTPS Only:** Production deployments should use HTTPS
+- **Token Expiration:** Configurable JWT and OAuth2 token expiration
+- **Scope Limitation:** Minimal required scopes for production
+- **Input Validation:** Comprehensive input validation and sanitization
+- **Audit Logging:** Complete audit trail for all operations
 
-- **JWT-based Authentication**: Secure token management
-- **OAuth2 Integration**: Industry-standard OAuth2 flow
-- **Session Management**: Secure session handling
-- **Error Handling**: Comprehensive error responses
+## 🚀 **Deployment**
 
-## Troubleshooting
+### **Docker Support**
+```bash
+# Build Docker image
+docker build -t dropbox-oauth .
 
-### Common Issues
-
-1. **"Invalid redirect URI"**: Ensure redirect URI matches exactly in Dropbox app settings
-2. **"Insufficient permissions"**: Check that your Dropbox app has the required scopes
-3. **"Team APIs not available"**: Ensure you have a Dropbox Business account
-4. **"JWT token expired"**: Re-authenticate via OAuth2 flow
-
-### Debug Mode
-
-Enable debug logging in `application.yml`:
-
-```yaml
-logging:
-  level:
-    com.cloudEagle.DropboxOAuth: DEBUG
-    org.springframework.security: DEBUG
+# Run container
+docker run -p 8080:8080 dropbox-oauth
 ```
 
-## API Documentation
+### **Production Configuration**
+- Environment-specific properties
+- Externalized configuration
+- Health checks and monitoring
+- Load balancing support
 
-For detailed API information, see `DROPBOX_API_TEMPLATE.md` which includes:
-- Complete API endpoint details
-- Request/response examples
-- Required scopes and permissions
-- Error handling information
+## 📚 **Documentation**
 
-## Contributing
+- **API Documentation:** Comprehensive endpoint documentation
+- **OAuth2 Guide:** Step-by-step authentication setup
+- **Testing Guide:** Postman configuration and testing
+- **Deployment Guide:** Production deployment instructions
+
+## 🤝 **Contributing**
 
 1. Fork the repository
 2. Create a feature branch
@@ -177,71 +243,29 @@ For detailed API information, see `DROPBOX_API_TEMPLATE.md` which includes:
 4. Add tests if applicable
 5. Submit a pull request
 
-## License
+## 📄 **License**
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is part of the CloudEagle Assessment and is provided as-is for evaluation purposes.
 
-## Support
+## 🔗 **Links**
 
-For issues and questions:
-1. Check the troubleshooting section
-2. Review the API documentation
-3. Check Dropbox API status at [Dropbox Status Page](https://status.dropbox.com/)
-4. Open an issue in the repository
+- **Dropbox API Documentation:** https://www.dropbox.com/developers/documentation
+- **Spring Boot Documentation:** https://spring.io/projects/spring-boot
+- **OAuth2 Specification:** https://oauth.net/2/
 
-## Token Management
+---
 
-### JWT Token
-- **Access Token**: Valid for 24 hours (when Dropbox tokens are included) or 10 minutes (basic)
-- **Refresh Token**: Valid for 7 days
-- **Auto-refresh**: Use refresh token to get new access token
+## 📊 **Assessment Completion**
 
-### Dropbox Token
-- **Access Token**: Embedded in JWT, refreshed via `/refresh-dropbox-token` endpoint
-- **Refresh Token**: Embedded in JWT, used to refresh Dropbox access token
+✅ **API Documentation** - Complete  
+✅ **OAuth2 Authentication** - Implemented  
+✅ **Postman Testing** - Configured  
+✅ **Java Implementation** - Complete  
+✅ **GitHub Repository** - Ready  
 
-### Frontend Token Handling
+**Assessment Status:** COMPLETE ✅  
+**Ready for Review:** YES ✅
 
-```javascript
-// Store tokens after login
-const handleLoginSuccess = (response) => {
-  localStorage.setItem('accessToken', response.jwt);
-  localStorage.setItem('refreshToken', response.refreshToken);
-};
+---
 
-// Refresh JWT token
-const refreshJWTToken = async () => {
-  const refreshToken = localStorage.getItem('refreshToken');
-  const response = await fetch('/cloudEagle/auth/refresh', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken })
-  });
-  
-  if (response.ok) {
-    const data = await response.json();
-    localStorage.setItem('accessToken', data.jwt);
-    localStorage.setItem('refreshToken', data.refreshToken);
-    return data.jwt;
-  }
-  
-  // Redirect to login if refresh fails
-  window.location.href = '/cloudEagle/login';
-};
-
-// Refresh Dropbox token
-const refreshDropboxToken = async () => {
-  const accessToken = localStorage.getItem('accessToken');
-  const response = await fetch('/cloudEagle/dropbox/refresh-dropbox-token', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${accessToken}` }
-  });
-  
-  if (response.ok) {
-    // Get new JWT with refreshed Dropbox token
-    return await refreshJWTToken();
-  }
-  
-  return null;
-};
-```
+**Built with ❤️ for CloudEagle Assessment**

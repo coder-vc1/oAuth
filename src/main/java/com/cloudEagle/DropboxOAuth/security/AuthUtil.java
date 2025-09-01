@@ -68,6 +68,31 @@ public class AuthUtil {
                 .compact();
     }
 
+    public String generateRefreshTokenWithDropboxTokens(User user, String dropboxAccessToken, String dropboxRefreshToken) {
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .claim("tokenType", "refresh")
+                .claim("dropboxAccessToken", dropboxAccessToken)
+                .claim("dropboxRefreshToken", dropboxRefreshToken)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000*60*60*24*7)) // 7 days
+                .signWith(getSecretKey())
+                .compact();
+    }
+
+    public String generateRefreshTokenWithDropboxToken(User user, String dropboxAccessToken) {
+        return Jwts.builder()
+                .subject(user.getUsername())
+                .claim("userId", user.getId().toString())
+                .claim("tokenType", "refresh")
+                .claim("dropboxAccessToken", dropboxAccessToken)
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + 1000*60*60*24*7)) // 7 days
+                .signWith(getSecretKey())
+                .compact();
+    }
+
     public String getUsernameFromToken(String token) {
         Claims claims =  Jwts.parser()
                 .verifyWith(getSecretKey())
